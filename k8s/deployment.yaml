@@ -18,6 +18,7 @@ spec:
       containers:
       - name: test-web
         image: test-web:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 80
         resources:
