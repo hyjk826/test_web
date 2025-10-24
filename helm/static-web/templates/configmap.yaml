@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "static-web.fullname" . }}-nginx-config
+  labels:
+    {{- include "static-web.labels" . | nindent 4 }}
+data:
+  default.conf: |
+    {{- .Values.nginx.config | nindent 4 }}
