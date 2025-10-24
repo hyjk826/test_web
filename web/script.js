@@ -1,37 +1,132 @@
-// 정적 웹페이지 JavaScript
+// Modern JavaScript for enhanced interactivity
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 정적 웹페이지가 로드되었습니다!');
+    console.log('🚀 Modern GitOps Platform loaded successfully!');
     
-    // 현재 시간 표시
-    updateTime();
-    setInterval(updateTime, 1000);
+    // Mobile Navigation Toggle
+    const navToggle = document.getElementById('nav-toggle');
+    const navMenu = document.getElementById('nav-menu');
     
-    // 애니메이션 효과
-    addScrollAnimations();
+    if (navToggle && navMenu) {
+        navToggle.addEventListener('click', function() {
+            navMenu.classList.toggle('active');
+            navToggle.classList.toggle('active');
+        });
+    }
     
-    // 상태 정보 업데이트
-    updateStatus();
-});
-
-function updateTime() {
-    const now = new Date();
-    const timeString = now.toLocaleString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
+    // Smooth scrolling for navigation links
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            const targetSection = document.querySelector(targetId);
+            
+            if (targetSection) {
+                const offsetTop = targetSection.offsetTop - 70; // Account for fixed navbar
+                window.scrollTo({
+                    top: offsetTop,
+                    behavior: 'smooth'
+                });
+                
+                // Close mobile menu if open
+                if (navMenu.classList.contains('active')) {
+                    navMenu.classList.remove('active');
+                    navToggle.classList.remove('active');
+                }
+            }
+        });
     });
     
-    // 시간 정보가 표시될 요소가 있다면 업데이트
-    const timeElement = document.getElementById('current-time');
-    if (timeElement) {
-        timeElement.textContent = timeString;
-    }
-}
-
-function addScrollAnimations() {
+    // Enhanced hover effects for feature cards
+    const featureCards = document.querySelectorAll('.feature-card');
+    featureCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-15px) scale(1.02)';
+            this.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.25)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+            this.style.boxShadow = '';
+        });
+        
+        // Click animation
+        card.addEventListener('click', function() {
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = 'scale(1)';
+            }, 150);
+        });
+    });
+    
+    // Pipeline step animations
+    const pipelineSteps = document.querySelectorAll('.pipeline-step');
+    pipelineSteps.forEach((step, index) => {
+        step.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-10px) scale(1.05)';
+            this.style.borderColor = 'var(--primary-color)';
+        });
+        
+        step.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+            this.style.borderColor = 'var(--border-color)';
+        });
+    });
+    
+    // Status card animations
+    const statusCards = document.querySelectorAll('.status-card');
+    statusCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px)';
+            this.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '';
+        });
+    });
+    
+    // Floating cards animation enhancement
+    const floatingCards = document.querySelectorAll('.card');
+    floatingCards.forEach((card, index) => {
+        card.addEventListener('mouseenter', function() {
+            this.style.animationPlayState = 'paused';
+            this.style.transform = 'translateY(-30px) scale(1.1)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.animationPlayState = 'running';
+            this.style.transform = '';
+        });
+    });
+    
+    // Button hover effects
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Status update simulation with enhanced effects
+    const statusHealthy = document.querySelectorAll('.status-healthy');
+    statusHealthy.forEach(element => {
+        setInterval(() => {
+            element.style.opacity = '0.6';
+            element.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                element.style.opacity = '1';
+                element.style.transform = 'scale(1)';
+            }, 300);
+        }, 5000);
+    });
+    
+    // Scroll-triggered animations
     const observerOptions = {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
@@ -46,79 +141,170 @@ function addScrollAnimations() {
         });
     }, observerOptions);
     
-    // 애니메이션 대상 요소들
-    const animatedElements = document.querySelectorAll('.step, .feature-card, .status-item');
+    // Observe elements for scroll animations
+    const animatedElements = document.querySelectorAll('.feature-card, .pipeline-step, .status-card');
     animatedElements.forEach(el => {
         el.style.opacity = '0';
-        el.style.transform = 'translateY(20px)';
+        el.style.transform = 'translateY(30px)';
         el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
         observer.observe(el);
     });
-}
+    
+    // Navbar background change on scroll
+    const navbar = document.querySelector('.navbar');
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 100) {
+            navbar.style.background = 'rgba(255, 255, 255, 0.98)';
+            navbar.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+        } else {
+            navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+            navbar.style.boxShadow = 'none';
+        }
+    });
+    
+    // Performance monitoring
+    const performanceInfo = {
+        loadTime: performance.now(),
+        userAgent: navigator.userAgent,
+        viewport: {
+            width: window.innerWidth,
+            height: window.innerHeight
+        }
+    };
+    
+    console.log('📊 Performance Info:', performanceInfo);
+    
+    // Add loading animation
+    window.addEventListener('load', function() {
+        document.body.style.opacity = '0';
+        document.body.style.transition = 'opacity 0.5s ease';
+        setTimeout(() => {
+            document.body.style.opacity = '1';
+        }, 100);
+    });
+    
+    // Real-time status updates
+    updateSystemStatus();
+    setInterval(updateSystemStatus, 10000); // Update every 10 seconds
+});
 
-function updateStatus() {
-    // 배포 상태 시뮬레이션
-    const statusItems = document.querySelectorAll('.status-item');
-    statusItems.forEach(item => {
-        const value = item.querySelector('.value');
-        if (value && value.textContent.includes('상태')) {
-            // 실제 환경에서는 API 호출로 실제 상태를 가져올 수 있습니다
-            value.innerHTML = '<span class="status-healthy">✅ 정상</span>';
+function updateSystemStatus() {
+    // Simulate real-time status updates
+    const metrics = document.querySelectorAll('.metric-value');
+    metrics.forEach(metric => {
+        if (metric.textContent.includes('%')) {
+            // Simulate CPU usage changes
+            const randomValue = Math.floor(Math.random() * 20) + 10; // 10-30%
+            metric.textContent = randomValue + '%';
+        } else if (metric.textContent.includes('MB')) {
+            // Simulate memory usage changes
+            const randomValue = Math.floor(Math.random() * 20) + 60; // 60-80MB
+            metric.textContent = randomValue + 'MB';
         }
     });
 }
 
-// 파이프라인 단계 클릭 이벤트
-document.addEventListener('click', function(e) {
-    if (e.target.closest('.step')) {
-        const step = e.target.closest('.step');
-        const stepName = step.querySelector('h3').textContent;
-        
-        // 단계별 상세 정보 표시 (실제로는 모달이나 상세 페이지로 이동)
-        console.log(`${stepName} 단계가 클릭되었습니다.`);
-        
-        // 간단한 알림 표시
-        showNotification(`${stepName} 단계에 대한 자세한 정보를 확인하세요.`);
-    }
-});
-
-function showNotification(message) {
-    // 간단한 알림 표시
+// Enhanced notification system
+function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
+    const colors = {
+        success: '#10b981',
+        warning: '#f59e0b',
+        error: '#ef4444',
+        info: '#3b82f6'
+    };
+    
     notification.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
-        background: #28a745;
+        background: ${colors[type]};
         color: white;
-        padding: 15px 20px;
-        border-radius: 5px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        z-index: 1000;
-        animation: slideIn 0.3s ease;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        z-index: 10000;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        max-width: 300px;
+        font-weight: 500;
     `;
     notification.textContent = message;
     
     document.body.appendChild(notification);
     
+    // Animate in
     setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Auto remove
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
         setTimeout(() => {
-            document.body.removeChild(notification);
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
         }, 300);
-    }, 3000);
+    }, 4000);
 }
 
-// CSS 애니메이션 추가
+// Add click handlers for interactive elements
+document.addEventListener('click', function(e) {
+    // Pipeline step clicks
+    if (e.target.closest('.pipeline-step')) {
+        const step = e.target.closest('.pipeline-step');
+        const stepName = step.querySelector('h3').textContent;
+        showNotification(`${stepName} 단계에 대한 자세한 정보를 확인하세요.`, 'info');
+    }
+    
+    // Feature card clicks
+    if (e.target.closest('.feature-card')) {
+        const card = e.target.closest('.feature-card');
+        const featureName = card.querySelector('h3').textContent;
+        showNotification(`${featureName} 기능에 대해 더 알아보세요!`, 'success');
+    }
+    
+    // Button clicks
+    if (e.target.closest('.btn')) {
+        const button = e.target.closest('.btn');
+        if (button.classList.contains('btn-primary')) {
+            showNotification('시작하기 버튼이 클릭되었습니다!', 'success');
+        } else if (button.classList.contains('btn-secondary')) {
+            showNotification('더 알아보기 버튼이 클릭되었습니다!', 'info');
+        }
+    }
+});
+
+// Add CSS animations
 const style = document.createElement('style');
 style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
+    
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+    }
+    
+    .feature-card:hover .feature-icon {
+        animation: pulse 2s infinite;
+    }
+    
+    .pipeline-step:hover .step-icon {
+        animation: pulse 1.5s infinite;
     }
 `;
 document.head.appendChild(style);
