@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "testweb.name" -}}
+{{- define "static-web.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "testweb.fullname" -}}
+{{- define "static-web.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -26,16 +26,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "testweb.chart" -}}
+{{- define "static-web.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "testweb.labels" -}}
-helm.sh/chart: {{ include "testweb.chart" . }}
-{{ include "testweb.selectorLabels" . }}
+{{- define "static-web.labels" -}}
+helm.sh/chart: {{ include "static-web.chart" . }}
+{{ include "static-web.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -45,18 +45,40 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "testweb.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "testweb.name" . }}
+{{- define "static-web.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "static-web.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "testweb.serviceAccountName" -}}
+{{- define "static-web.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "testweb.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "static-web.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create the name of the configmap to use
+*/}}
+{{- define "static-web.configMapName" -}}
+{{- if .Values.configMap.name }}
+{{- .Values.configMap.name }}
+{{- else }}
+{{- include "static-web.fullname" . }}-config
+{{- end }}
+{{- end }}
+
+{{/*
+Create the name of the secret to use
+*/}}
+{{- define "static-web.secretName" -}}
+{{- if .Values.secret.name }}
+{{- .Values.secret.name }}
+{{- else }}
+{{- include "static-web.fullname" . }}-secret
 {{- end }}
 {{- end }}

@@ -1,28 +1,55 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: test-web
+  name: static-web
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
+  labels:
+    app.kubernetes.io/name: static-web
+    app.kubernetes.io/part-of: static-web
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: default
   source:
-    repoURL: https://github.com/hyjk826/test_web.git
+    repoURL: https://github.com/hyjk826/test_web
     targetRevision: HEAD
-    path: testweb
+    path: helm/static-web
     helm:
       valueFiles:
-      - values.yaml
+        - values.yaml
+      parameters:
+        - name: image.repository
+          value: ghcr.io/hyjk826/static-web
+        - name: image.tag
+          value: latest
+        - name: ingress.hosts[0].host
+          value: web.example.local
+        - name: serviceAccount.create
+          value: "true"
+        - name: resources.limits.cpu
+          value: "100m"
+        - name: resources.limits.memory
+          value: "128Mi"
+        - name: resources.requests.cpu
+          value: "50m"
+        - name: resources.requests.memory
+          value: "64Mi"
   destination:
     server: https://kubernetes.default.svc
-    namespace: test-web
+    namespace: web
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+      allowEmpty: false
     syncOptions:
-    - CreateNamespace=true
-    - PrunePropagationPolicy=foreground
-    - PruneLast=true
-  revisionHistoryLimit: 3
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  revisionHistoryLimit: 10

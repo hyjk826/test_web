@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>정적 웹페이지</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 정적 웹페이지</h1>
+            <p>ArgoCD + GitHub Actions + Kubernetes + GHCR.io + Helm Chart</p>
+        </header>
+        
+        <main>
+            <section class="hero">
+                <h2>CI/CD 파이프라인</h2>
+                <div class="pipeline">
+                    <div class="step">
+                        <div class="step-icon">📝</div>
+                        <h3>GitHub Actions</h3>
+                        <p>코드 빌드 및 이미지 푸시</p>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="step">
+                        <div class="step-icon">🐳</div>
+                        <h3>GHCR.io</h3>
+                        <p>컨테이너 이미지 저장소</p>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="step">
+                        <div class="step-icon">⚓</div>
+                        <h3>ArgoCD</h3>
+                        <p>GitOps 배포 자동화</p>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="step">
+                        <div class="step-icon">☸️</div>
+                        <h3>Kubernetes</h3>
+                        <p>컨테이너 오케스트레이션</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="features">
+                <h2>주요 기능</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>🔧 Helm Chart</h3>
+                        <p>Kubernetes 애플리케이션 패키징 및 배포 관리</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🔄 GitOps</h3>
+                        <p>Git 기반 선언적 배포 자동화</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📦 Container Registry</h3>
+                        <p>GitHub Container Registry를 통한 이미지 관리</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🚀 CI/CD</h3>
+                        <p>GitHub Actions를 통한 자동화된 빌드 및 배포</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="status">
+                <h2>배포 상태</h2>
+                <div class="status-info">
+                    <div class="status-item">
+                        <span class="label">환경:</span>
+                        <span class="value">Production</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">네임스페이스:</span>
+                        <span class="value">web</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">이미지:</span>
+                        <span class="value">ghcr.io/static-web:latest</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">상태:</span>
+                        <span class="value status-healthy">✅ 정상</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>&copy; 2024 정적 웹페이지. ArgoCD + GitHub Actions + Kubernetes로 구동됩니다.</p>
+        </footer>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

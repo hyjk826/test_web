@@ -1,16 +1,32 @@
-# Nginx를 사용한 정적 웹페이지 서빙
-FROM nginx:alpine
+# Multi-stage build for better security and smaller image size
+FROM nginx:1.25-alpine AS base
 
-# 웹 파일들을 nginx 디렉토리로 복사
-COPY index.html /usr/share/nginx/html/
-COPY styles.css /usr/share/nginx/html/
-COPY script.js /usr/share/nginx/html/
+# Create non-root user
+RUN addgroup -g 1000 -S nginx && \
+    adduser -u 1000 -S nginx -G nginx
 
-# nginx 설정 파일 복사 (선택사항)
-COPY nginx.conf /etc/nginx/nginx.conf
+# Set working directory
+WORKDIR /usr/share/nginx/html
 
-# 포트 80 노출
+# Copy static files
+COPY --chown=nginx:nginx ./web/ /usr/share/nginx/html/
+
+# Create nginx config directory
+RUN mkdir -p /etc/nginx/conf.d && \
+    chown -R nginx:nginx /etc/nginx/conf.d
+
+# Switch to non-root user
+USER nginx
+
+# Expose port
 EXPOSE 80
 
-# nginx 실행
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
+
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
+
+
+
