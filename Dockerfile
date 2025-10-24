@@ -7,12 +7,13 @@ WORKDIR /usr/share/nginx/html
 # Copy static files
 COPY --chown=nginx:nginx ./web/ /usr/share/nginx/html/
 
-# Create nginx config directory
+# Create nginx config directory and set proper permissions
 RUN mkdir -p /etc/nginx/conf.d && \
-    chown -R nginx:nginx /etc/nginx/conf.d
+    chown -R nginx:nginx /etc/nginx/conf.d && \
+    chmod -R 755 /etc/nginx/conf.d
 
-# Switch to non-root user (nginx user already exists)
-USER nginx
+# Keep root user for nginx to work properly
+# USER nginx
 
 # Expose port
 EXPOSE 80
