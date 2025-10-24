@@ -1,10 +1,6 @@
 # Multi-stage build for better security and smaller image size
 FROM nginx:1.25-alpine AS base
 
-# Create non-root user
-RUN addgroup -g 1000 -S nginx && \
-    adduser -u 1000 -S nginx -G nginx
-
 # Set working directory
 WORKDIR /usr/share/nginx/html
 
@@ -15,7 +11,7 @@ COPY --chown=nginx:nginx ./web/ /usr/share/nginx/html/
 RUN mkdir -p /etc/nginx/conf.d && \
     chown -R nginx:nginx /etc/nginx/conf.d
 
-# Switch to non-root user
+# Switch to non-root user (nginx user already exists)
 USER nginx
 
 # Expose port
