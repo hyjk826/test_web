@@ -21,7 +21,7 @@ spec:
         - name: image.repository
           value: ghcr.io/hyjk826/static-web
         - name: image.tag
-          value: latest
+          value: main
         - name: ingress.hosts[0].host
           value: web.example.local
         - name: serviceAccount.create

@@ -1,26 +1,15 @@
-# Multi-stage build for better security and smaller image size
-FROM nginx:1.25-alpine AS base
+# NGINX로 정적 파일 서빙 (경량)
+FROM nginx:1.25-alpine
 
-# Set working directory
-WORKDIR /usr/share/nginx/html
+# 정적 파일 복사 (권한 지정 불필요)
+COPY ./web/ /usr/share/nginx/html/
 
-# Copy static files
-COPY --chown=nginx:nginx ./web/ /usr/share/nginx/html/
+# 기본 설정은 이미지에 포함된 /etc/nginx/conf.d/default.conf 사용
+# (K8s에서 ConfigMap으로 default.conf를 마운트하면 자동 대체됨)
 
-# Create nginx config directory and set proper permissions
-RUN mkdir -p /etc/nginx/conf.d && \
-    chown -R nginx:nginx /etc/nginx/conf.d && \
-    chmod -R 755 /etc/nginx/conf.d
-
-# Keep root user for nginx to work properly
-# USER nginx
-
-# Expose port
 EXPOSE 80
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
+# Dockerfile의 HEALTHCHECK는 K8s 프로브와 중복이므로 제거
+# (필요하면 curl 설치 후 추가 가능)
 
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
