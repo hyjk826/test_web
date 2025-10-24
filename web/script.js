@@ -1,310 +1,463 @@
-// Modern JavaScript for enhanced interactivity
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Modern GitOps Platform loaded successfully!');
+// DevOps Snake Game
+class SnakeGame {
+    constructor() {
+        this.canvas = document.getElementById('game-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.gridSize = 20;
+        this.tileCount = this.canvas.width / this.gridSize;
+        
+        // Game state
+        this.gameRunning = false;
+        this.gamePaused = false;
+        this.score = 0;
+        this.level = 1;
+        this.highScore = localStorage.getItem('snakeHighScore') || 0;
+        this.gameSpeed = 150;
+        
+        // Snake
+        this.snake = [
+            {x: 10, y: 10}
+        ];
+        this.dx = 0;
+        this.dy = 0;
+        
+        // Food
+        this.food = {x: 15, y: 15};
+        this.foodType = 'normal';
+        
+        // DevOps tools for food
+        this.devopsTools = [
+            {name: 'GitHub', icon: 'fab fa-github', color: '#333', points: 10},
+            {name: 'Docker', icon: 'fas fa-ship', color: '#2496ed', points: 15},
+            {name: 'Kubernetes', icon: 'fas fa-cube', color: '#326ce5', points: 20},
+            {name: 'ArgoCD', icon: 'fas fa-sync', color: '#ef7b4d', points: 25},
+            {name: 'Helm', icon: 'fas fa-anchor', color: '#0f1689', points: 30},
+            {name: 'Jenkins', icon: 'fas fa-cogs', color: '#d24939', points: 35}
+        ];
+        
+        this.initializeGame();
+        this.setupEventListeners();
+        this.updateDisplay();
+    }
     
-    // Mobile Navigation Toggle
-    const navToggle = document.getElementById('nav-toggle');
-    const navMenu = document.getElementById('nav-menu');
+    initializeGame() {
+        this.snake = [{x: 10, y: 10}];
+        this.dx = 0;
+        this.dy = 0;
+        this.score = 0;
+        this.level = 1;
+        this.gameSpeed = 150;
+        this.generateFood();
+    }
     
-    if (navToggle && navMenu) {
-        navToggle.addEventListener('click', function() {
-            navMenu.classList.toggle('active');
-            navToggle.classList.toggle('active');
+    setupEventListeners() {
+        // Button events
+        document.getElementById('start-btn').addEventListener('click', () => this.startGame());
+        document.getElementById('pause-btn').addEventListener('click', () => this.togglePause());
+        document.getElementById('reset-btn').addEventListener('click', () => this.resetGame());
+        document.getElementById('play-again-btn').addEventListener('click', () => this.playAgain());
+        document.getElementById('close-modal-btn').addEventListener('click', () => this.closeModal());
+        
+        // Keyboard events
+        document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+        
+        // Prevent arrow keys from scrolling
+        document.addEventListener('keydown', (e) => {
+            if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+            }
         });
     }
     
-    // Smooth scrolling for navigation links
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href');
-            const targetSection = document.querySelector(targetId);
+    handleKeyPress(e) {
+        if (!this.gameRunning || this.gamePaused) return;
+        
+        const key = e.key;
+        
+        switch(key) {
+            case 'ArrowUp':
+                if (this.dy !== 1) {
+                    this.dx = 0;
+                    this.dy = -1;
+                }
+                break;
+            case 'ArrowDown':
+                if (this.dy !== -1) {
+                    this.dx = 0;
+                    this.dy = 1;
+                }
+                break;
+            case 'ArrowLeft':
+                if (this.dx !== 1) {
+                    this.dx = -1;
+                    this.dy = 0;
+                }
+                break;
+            case 'ArrowRight':
+                if (this.dx !== -1) {
+                    this.dx = 1;
+                    this.dy = 0;
+                }
+                break;
+            case ' ':
+                e.preventDefault();
+                this.togglePause();
+                break;
+        }
+    }
+    
+    startGame() {
+        if (!this.gameRunning) {
+            this.gameRunning = true;
+            this.gamePaused = false;
+            this.gameLoop();
+            this.updateButtons();
+        }
+    }
+    
+    togglePause() {
+        if (this.gameRunning) {
+            this.gamePaused = !this.gamePaused;
+            if (!this.gamePaused) {
+                this.gameLoop();
+            }
+            this.updateButtons();
+        }
+    }
+    
+    resetGame() {
+        this.gameRunning = false;
+        this.gamePaused = false;
+        this.initializeGame();
+        this.draw();
+        this.updateDisplay();
+        this.updateButtons();
+    }
+    
+    playAgain() {
+        this.closeModal();
+        this.resetGame();
+        this.startGame();
+    }
+    
+    closeModal() {
+        document.getElementById('game-over-modal').classList.remove('show');
+    }
+    
+    updateButtons() {
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        
+        if (this.gameRunning) {
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            resetBtn.disabled = false;
             
-            if (targetSection) {
-                const offsetTop = targetSection.offsetTop - 70; // Account for fixed navbar
-                window.scrollTo({
-                    top: offsetTop,
-                    behavior: 'smooth'
-                });
+            if (this.gamePaused) {
+                pauseBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
+            } else {
+                pauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+            }
+        } else {
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = false;
+            pauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+        }
+    }
+    
+    gameLoop() {
+        if (!this.gameRunning || this.gamePaused) return;
+        
+        this.update();
+        this.draw();
+        
+        if (this.gameRunning) {
+            setTimeout(() => this.gameLoop(), this.gameSpeed);
+        }
+    }
+    
+    update() {
+        const head = {x: this.snake[0].x + this.dx, y: this.snake[0].y + this.dy};
+        
+        // Check wall collision
+        if (head.x < 0 || head.x >= this.tileCount || head.y < 0 || head.y >= this.tileCount) {
+            this.gameOver();
+            return;
+        }
+        
+        // Check self collision
+        for (let segment of this.snake) {
+            if (head.x === segment.x && head.y === segment.y) {
+                this.gameOver();
+                return;
+            }
+        }
+        
+        this.snake.unshift(head);
+        
+        // Check food collision
+        if (head.x === this.food.x && head.y === this.food.y) {
+            this.eatFood();
+        } else {
+            this.snake.pop();
+        }
+    }
+    
+    eatFood() {
+        this.score += this.food.points;
+        this.updateDisplay();
+        
+        // Level up every 100 points
+        const newLevel = Math.floor(this.score / 100) + 1;
+        if (newLevel > this.level) {
+            this.level = newLevel;
+            this.gameSpeed = Math.max(50, this.gameSpeed - 10);
+            this.showLevelUp();
+        }
+        
+        this.generateFood();
+    }
+    
+    generateFood() {
+        let newFood;
+        do {
+            newFood = {
+                x: Math.floor(Math.random() * this.tileCount),
+                y: Math.floor(Math.random() * this.tileCount)
+            };
+        } while (this.snake.some(segment => segment.x === newFood.x && segment.y === newFood.y));
+        
+        this.food = newFood;
+        this.foodType = this.devopsTools[Math.floor(Math.random() * this.devopsTools.length)];
+        this.food.points = this.foodType.points;
+    }
+    
+    draw() {
+        // Clear canvas
+        this.ctx.fillStyle = '#f8fafc';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw grid
+        this.ctx.strokeStyle = '#e2e8f0';
+        this.ctx.lineWidth = 1;
+        for (let i = 0; i <= this.tileCount; i++) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(i * this.gridSize, 0);
+            this.ctx.lineTo(i * this.gridSize, this.canvas.height);
+            this.ctx.moveTo(0, i * this.gridSize);
+            this.ctx.lineTo(this.canvas.width, i * this.gridSize);
+            this.ctx.stroke();
+        }
+        
+        // Draw snake
+        this.snake.forEach((segment, index) => {
+            if (index === 0) {
+                // Head
+                this.ctx.fillStyle = '#10b981';
+                this.ctx.fillRect(segment.x * this.gridSize + 2, segment.y * this.gridSize + 2, 
+                                this.gridSize - 4, this.gridSize - 4);
                 
-                // Close mobile menu if open
-                if (navMenu.classList.contains('active')) {
-                    navMenu.classList.remove('active');
-                    navToggle.classList.remove('active');
+                // Eyes
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.fillRect(segment.x * this.gridSize + 6, segment.y * this.gridSize + 6, 3, 3);
+                this.ctx.fillRect(segment.x * this.gridSize + 11, segment.y * this.gridSize + 6, 3, 3);
+            } else {
+                // Body
+                this.ctx.fillStyle = '#059669';
+                this.ctx.fillRect(segment.x * this.gridSize + 3, segment.y * this.gridSize + 3, 
+                                this.gridSize - 6, this.gridSize - 6);
+            }
+        });
+        
+        // Draw food
+        this.ctx.fillStyle = this.foodType.color;
+        this.ctx.fillRect(this.food.x * this.gridSize + 4, this.food.y * this.gridSize + 4, 
+                         this.gridSize - 8, this.gridSize - 8);
+        
+        // Draw food icon (simplified)
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '12px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(this.foodType.name.charAt(0), 
+                          this.food.x * this.gridSize + this.gridSize/2, 
+                          this.food.y * this.gridSize + this.gridSize/2 + 4);
+    }
+    
+    gameOver() {
+        this.gameRunning = false;
+        this.gamePaused = false;
+        
+        // Update high score
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('snakeHighScore', this.highScore);
+        }
+        
+        this.showGameOverModal();
+        this.updateDisplay();
+        this.updateButtons();
+    }
+    
+    showGameOverModal() {
+        document.getElementById('final-score').textContent = this.score;
+        document.getElementById('final-level').textContent = this.level;
+        document.getElementById('final-high-score').textContent = this.highScore;
+        document.getElementById('game-over-modal').classList.add('show');
+    }
+    
+    showLevelUp() {
+        // Create level up notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--gradient-primary);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            z-index: 1001;
+            animation: levelUpAnimation 2s ease;
+        `;
+        notification.textContent = `Level ${this.level}!`;
+        
+        // Add animation CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes levelUpAnimation {
+                0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+                50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+                100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            document.body.removeChild(notification);
+            document.head.removeChild(style);
+        }, 2000);
+    }
+    
+    updateDisplay() {
+        document.getElementById('score').textContent = this.score;
+        document.getElementById('level').textContent = this.level;
+        document.getElementById('high-score').textContent = this.highScore;
+    }
+}
+
+// Initialize game when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎮 DevOps Snake Game loaded!');
+    
+    const game = new SnakeGame();
+    
+    // Add touch controls for mobile
+    let touchStartX = 0;
+    let touchStartY = 0;
+    
+    document.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    });
+    
+    document.addEventListener('touchend', (e) => {
+        if (!game.gameRunning || game.gamePaused) return;
+        
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+        
+        const minSwipeDistance = 50;
+        
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            // Horizontal swipe
+            if (Math.abs(deltaX) > minSwipeDistance) {
+                if (deltaX > 0) {
+                    // Swipe right
+                    if (game.dx !== -1) {
+                        game.dx = 1;
+                        game.dy = 0;
+                    }
+                } else {
+                    // Swipe left
+                    if (game.dx !== 1) {
+                        game.dx = -1;
+                        game.dy = 0;
+                    }
                 }
             }
-        });
-    });
-    
-    // Enhanced hover effects for feature cards
-    const featureCards = document.querySelectorAll('.feature-card');
-    featureCards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-15px) scale(1.02)';
-            this.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.25)';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0) scale(1)';
-            this.style.boxShadow = '';
-        });
-        
-        // Click animation
-        card.addEventListener('click', function() {
-            this.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                this.style.transform = 'scale(1)';
-            }, 150);
-        });
-    });
-    
-    // Pipeline step animations
-    const pipelineSteps = document.querySelectorAll('.pipeline-step');
-    pipelineSteps.forEach((step, index) => {
-        step.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-10px) scale(1.05)';
-            this.style.borderColor = 'var(--primary-color)';
-        });
-        
-        step.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0) scale(1)';
-            this.style.borderColor = 'var(--border-color)';
-        });
-    });
-    
-    // Status card animations
-    const statusCards = document.querySelectorAll('.status-card');
-    statusCards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-8px)';
-            this.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-            this.style.boxShadow = '';
-        });
-    });
-    
-    // Floating cards animation enhancement
-    const floatingCards = document.querySelectorAll('.card');
-    floatingCards.forEach((card, index) => {
-        card.addEventListener('mouseenter', function() {
-            this.style.animationPlayState = 'paused';
-            this.style.transform = 'translateY(-30px) scale(1.1)';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.animationPlayState = 'running';
-            this.style.transform = '';
-        });
-    });
-    
-    // Button hover effects
-    const buttons = document.querySelectorAll('.btn');
-    buttons.forEach(button => {
-        button.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-2px)';
-        });
-        
-        button.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
-    });
-    
-    // Status update simulation with enhanced effects
-    const statusHealthy = document.querySelectorAll('.status-healthy');
-    statusHealthy.forEach(element => {
-        setInterval(() => {
-            element.style.opacity = '0.6';
-            element.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                element.style.opacity = '1';
-                element.style.transform = 'scale(1)';
-            }, 300);
-        }, 5000);
-    });
-    
-    // Scroll-triggered animations
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
-            }
-        });
-    }, observerOptions);
-    
-    // Observe elements for scroll animations
-    const animatedElements = document.querySelectorAll('.feature-card, .pipeline-step, .status-card');
-    animatedElements.forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(30px)';
-        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-        observer.observe(el);
-    });
-    
-    // Navbar background change on scroll
-    const navbar = document.querySelector('.navbar');
-    window.addEventListener('scroll', function() {
-        if (window.scrollY > 100) {
-            navbar.style.background = 'rgba(255, 255, 255, 0.98)';
-            navbar.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
         } else {
-            navbar.style.background = 'rgba(255, 255, 255, 0.95)';
-            navbar.style.boxShadow = 'none';
-        }
-    });
-    
-    // Performance monitoring
-    const performanceInfo = {
-        loadTime: performance.now(),
-        userAgent: navigator.userAgent,
-        viewport: {
-            width: window.innerWidth,
-            height: window.innerHeight
-        }
-    };
-    
-    console.log('📊 Performance Info:', performanceInfo);
-    
-    // Add loading animation
-    window.addEventListener('load', function() {
-        document.body.style.opacity = '0';
-        document.body.style.transition = 'opacity 0.5s ease';
-        setTimeout(() => {
-            document.body.style.opacity = '1';
-        }, 100);
-    });
-    
-    // Real-time status updates
-    updateSystemStatus();
-    setInterval(updateSystemStatus, 10000); // Update every 10 seconds
-});
-
-function updateSystemStatus() {
-    // Simulate real-time status updates
-    const metrics = document.querySelectorAll('.metric-value');
-    metrics.forEach(metric => {
-        if (metric.textContent.includes('%')) {
-            // Simulate CPU usage changes
-            const randomValue = Math.floor(Math.random() * 20) + 10; // 10-30%
-            metric.textContent = randomValue + '%';
-        } else if (metric.textContent.includes('MB')) {
-            // Simulate memory usage changes
-            const randomValue = Math.floor(Math.random() * 20) + 60; // 60-80MB
-            metric.textContent = randomValue + 'MB';
-        }
-    });
-}
-
-// Enhanced notification system
-function showNotification(message, type = 'success') {
-    const notification = document.createElement('div');
-    const colors = {
-        success: '#10b981',
-        warning: '#f59e0b',
-        error: '#ef4444',
-        info: '#3b82f6'
-    };
-    
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${colors[type]};
-        color: white;
-        padding: 1rem 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        z-index: 10000;
-        transform: translateX(100%);
-        transition: transform 0.3s ease;
-        max-width: 300px;
-        font-weight: 500;
-    `;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    // Animate in
-    setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-    }, 100);
-    
-    // Auto remove
-    setTimeout(() => {
-        notification.style.transform = 'translateX(100%)';
-        setTimeout(() => {
-            if (document.body.contains(notification)) {
-                document.body.removeChild(notification);
+            // Vertical swipe
+            if (Math.abs(deltaY) > minSwipeDistance) {
+                if (deltaY > 0) {
+                    // Swipe down
+                    if (game.dy !== -1) {
+                        game.dx = 0;
+                        game.dy = 1;
+                    }
+                } else {
+                    // Swipe up
+                    if (game.dy !== 1) {
+                        game.dx = 0;
+                        game.dy = -1;
+                    }
+                }
             }
-        }, 300);
-    }, 4000);
-}
-
-// Add click handlers for interactive elements
-document.addEventListener('click', function(e) {
-    // Pipeline step clicks
-    if (e.target.closest('.pipeline-step')) {
-        const step = e.target.closest('.pipeline-step');
-        const stepName = step.querySelector('h3').textContent;
-        showNotification(`${stepName} 단계에 대한 자세한 정보를 확인하세요.`, 'info');
-    }
-    
-    // Feature card clicks
-    if (e.target.closest('.feature-card')) {
-        const card = e.target.closest('.feature-card');
-        const featureName = card.querySelector('h3').textContent;
-        showNotification(`${featureName} 기능에 대해 더 알아보세요!`, 'success');
-    }
-    
-    // Button clicks
-    if (e.target.closest('.btn')) {
-        const button = e.target.closest('.btn');
-        if (button.classList.contains('btn-primary')) {
-            showNotification('시작하기 버튼이 클릭되었습니다!', 'success');
-        } else if (button.classList.contains('btn-secondary')) {
-            showNotification('더 알아보기 버튼이 클릭되었습니다!', 'info');
         }
+    });
+    
+    // Prevent context menu on long press
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+    
+    // Add keyboard shortcuts info
+    const shortcutsInfo = document.createElement('div');
+    shortcutsInfo.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        font-size: 0.875rem;
+        z-index: 100;
+        max-width: 200px;
+        display: none;
+    `;
+    shortcutsInfo.innerHTML = `
+        <strong>Keyboard Shortcuts:</strong><br>
+        Arrow Keys: Move<br>
+        Space: Pause/Resume<br>
+        <br>
+        <strong>Mobile:</strong><br>
+        Swipe to move
+    `;
+    document.body.appendChild(shortcutsInfo);
+    
+    // Show shortcuts on first visit
+    if (!localStorage.getItem('snakeGameVisited')) {
+        setTimeout(() => {
+            shortcutsInfo.style.display = 'block';
+            setTimeout(() => {
+                shortcutsInfo.style.display = 'none';
+            }, 5000);
+        }, 2000);
+        localStorage.setItem('snakeGameVisited', 'true');
     }
+    
+    // Add click to show shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'h' || e.key === 'H') {
+            shortcutsInfo.style.display = shortcutsInfo.style.display === 'none' ? 'block' : 'none';
+        }
+    });
 });
-
-// Add CSS animations
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    @keyframes pulse {
-        0%, 100% {
-            transform: scale(1);
-        }
-        50% {
-            transform: scale(1.05);
-        }
-    }
-    
-    .feature-card:hover .feature-icon {
-        animation: pulse 2s infinite;
-    }
-    
-    .pipeline-step:hover .step-icon {
-        animation: pulse 1.5s infinite;
-    }
-`;
-document.head.appendChild(style);
