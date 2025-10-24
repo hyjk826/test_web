@@ -3,143 +3,420 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevOps Minesweeper</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>지뢰찾기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        .info {
+            display: flex;
+            gap: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .info-item {
+            background: #f0f0f0;
+            padding: 8px 15px;
+            border-radius: 8px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        .difficulty {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .difficulty button {
+            padding: 8px 15px;
+            font-size: 14px;
+            background: #764ba2;
+        }
+
+        .difficulty button.active {
+            background: #5a3a7d;
+        }
+
+        .game-board {
+            display: inline-grid;
+            gap: 2px;
+            background: #999;
+            padding: 2px;
+            border-radius: 5px;
+        }
+
+        .cell {
+            width: 30px;
+            height: 30px;
+            background: #ddd;
+            border: 2px outset #eee;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .cell:hover:not(.revealed):not(.flagged) {
+            background: #ccc;
+        }
+
+        .cell.revealed {
+            background: #fff;
+            border: 1px solid #999;
+            cursor: default;
+        }
+
+        .cell.mine {
+            background: #ff4444;
+        }
+
+        .cell.flagged {
+            background: #ffd700;
+        }
+
+        .cell.flagged::after {
+            content: '🚩';
+            font-size: 18px;
+        }
+
+        .cell.mine::after {
+            content: '💣';
+            font-size: 18px;
+        }
+
+        .cell.number-1 { color: blue; }
+        .cell.number-2 { color: green; }
+        .cell.number-3 { color: red; }
+        .cell.number-4 { color: darkblue; }
+        .cell.number-5 { color: darkred; }
+        .cell.number-6 { color: cyan; }
+        .cell.number-7 { color: black; }
+        .cell.number-8 { color: gray; }
+
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .game-over h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+
+        .game-over.win h2 {
+            color: #4CAF50;
+        }
+
+        .game-over.lose h2 {
+            color: #f44336;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <!-- Game Header -->
-    <header class="game-header">
-        <div class="header-container">
-            <div class="game-title">
-                <i class="fas fa-bomb"></i>
-                <h1>DevOps Minesweeper</h1>
-            </div>
-            <div class="game-stats">
-                <div class="stat">
-                    <span class="stat-label">Mines</span>
-                    <span class="stat-value" id="mines-count">10</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">Time</span>
-                    <span class="stat-value" id="timer">000</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">Best</span>
-                    <span class="stat-value" id="best-time">000</span>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Game Container -->
-    <main class="game-container">
-        <div class="game-wrapper">
-            <!-- Game Board -->
-            <div class="game-board" id="game-board">
-                <div class="minesweeper-grid" id="minesweeper-grid"></div>
-            </div>
-            
-            <!-- Game Controls -->
-            <div class="game-controls">
-                <div class="control-buttons">
-                    <button class="btn btn-primary" id="new-game-btn">
-                        <i class="fas fa-play"></i>
-                        New Game
-                    </button>
-                    <button class="btn btn-secondary" id="difficulty-btn">
-                        <i class="fas fa-cog"></i>
-                        Easy
-                    </button>
-                    <button class="btn btn-danger" id="hint-btn">
-                        <i class="fas fa-lightbulb"></i>
-                        Hint
-                    </button>
-                </div>
-                
-                <div class="game-instructions">
-                    <h3>게임 방법</h3>
-                    <div class="instructions">
-                        <div class="instruction-item">
-                            <i class="fas fa-mouse-pointer"></i>
-                            <span>좌클릭: 열기</span>
-                        </div>
-                        <div class="instruction-item">
-                            <i class="fas fa-flag"></i>
-                            <span>우클릭: 깃발</span>
-                        </div>
-                        <div class="instruction-item">
-                            <i class="fas fa-question"></i>
-                            <span>더블클릭: 물음표</span>
-                        </div>
-                        <div class="instruction-item">
-                            <i class="fas fa-bomb"></i>
-                            <span>지뢰 피하기!</span>
-                        </div>
-                    </div>
-                    <p class="instruction-text">
-                        DevOps 도구들을 찾아서 모든 지뢰를 피하세요!<br>
-                        숫자는 주변 지뢰의 개수를 나타냅니다.
-                    </p>
-                </div>
-            </div>
-        </div>
+    <div class="container">
+        <h1>🎮 지뢰찾기</h1>
         
-        <!-- Game Over Modal -->
-        <div class="modal" id="game-over-modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 id="game-result">Game Over!</h2>
-                    <i class="fas fa-trophy" id="result-icon"></i>
-                </div>
-                <div class="modal-body">
-                    <div class="final-stats">
-                        <div class="final-stat">
-                            <span class="final-stat-label">Time</span>
-                            <span class="final-stat-value" id="final-time">000</span>
-                        </div>
-                        <div class="final-stat">
-                            <span class="final-stat-label">Difficulty</span>
-                            <span class="final-stat-value" id="final-difficulty">Easy</span>
-                        </div>
-                        <div class="final-stat">
-                            <span class="final-stat-label">Best Time</span>
-                            <span class="final-stat-value" id="final-best-time">000</span>
-                        </div>
-                    </div>
-                    <div class="modal-buttons">
-                        <button class="btn btn-primary" id="play-again-btn">
-                            <i class="fas fa-play"></i>
-                            Play Again
-                        </button>
-                        <button class="btn btn-secondary" id="close-modal-btn">
-                            <i class="fas fa-times"></i>
-                            Close
-                        </button>
-                    </div>
-                </div>
-            </div>
+        <div class="difficulty">
+            <button onclick="setDifficulty('easy')" class="active" id="btn-easy">쉬움 (9x9)</button>
+            <button onclick="setDifficulty('medium')" id="btn-medium">보통 (16x16)</button>
+            <button onclick="setDifficulty('hard')" id="btn-hard">어려움 (16x30)</button>
         </div>
-    </main>
 
-    <!-- Footer -->
-    <footer class="game-footer">
-        <div class="footer-content">
-            <p>&copy; 2024 DevOps Minesweeper. Built with ❤️ using modern web technologies.</p>
-            <div class="footer-links">
-                <a href="#" class="footer-link">
-                    <i class="fab fa-github"></i>
-                    GitHub
-                </a>
-                <a href="#" class="footer-link">
-                    <i class="fas fa-code"></i>
-                    Source Code
-                </a>
+        <div class="controls">
+            <div class="info">
+                <div class="info-item">💣 <span id="mine-count">10</span></div>
+                <div class="info-item">⏱️ <span id="timer">0</span>초</div>
             </div>
+            <button onclick="initGame()">새 게임</button>
         </div>
-    </footer>
 
-    <script src="script.js"></script>
+        <div id="game-board" class="game-board"></div>
+    </div>
+
+    <div id="overlay" class="overlay hidden"></div>
+    <div id="game-over" class="game-over hidden">
+        <h2 id="result-text"></h2>
+        <p id="result-time"></p>
+        <button onclick="initGame()">다시 시작</button>
+    </div>
+
+    <script>
+        let rows = 9;
+        let cols = 9;
+        let mineCount = 10;
+        let board = [];
+        let revealed = [];
+        let flagged = [];
+        let gameOver = false;
+        let timer = 0;
+        let timerInterval = null;
+        let firstClick = true;
+
+        function setDifficulty(level) {
+            document.querySelectorAll('.difficulty button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            if (level === 'easy') {
+                rows = 9;
+                cols = 9;
+                mineCount = 10;
+                document.getElementById('btn-easy').classList.add('active');
+            } else if (level === 'medium') {
+                rows = 16;
+                cols = 16;
+                mineCount = 40;
+                document.getElementById('btn-medium').classList.add('active');
+            } else if (level === 'hard') {
+                rows = 16;
+                cols = 30;
+                mineCount = 99;
+                document.getElementById('btn-hard').classList.add('active');
+            }
+
+            initGame();
+        }
+
+        function initGame() {
+            board = [];
+            revealed = [];
+            flagged = [];
+            gameOver = false;
+            firstClick = true;
+            timer = 0;
+            clearInterval(timerInterval);
+            document.getElementById('timer').textContent = timer;
+            document.getElementById('mine-count').textContent = mineCount;
+            document.getElementById('overlay').classList.add('hidden');
+            document.getElementById('game-over').classList.add('hidden');
+
+            const gameBoard = document.getElementById('game-board');
+            gameBoard.innerHTML = '';
+            gameBoard.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
+
+            for (let i = 0; i < rows; i++) {
+                board[i] = [];
+                revealed[i] = [];
+                flagged[i] = [];
+                for (let j = 0; j < cols; j++) {
+                    board[i][j] = 0;
+                    revealed[i][j] = false;
+                    flagged[i][j] = false;
+
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.addEventListener('click', handleCellClick);
+                    cell.addEventListener('contextmenu', handleRightClick);
+                    gameBoard.appendChild(cell);
+                }
+            }
+        }
+
+        function placeMines(avoidRow, avoidCol) {
+            let minesPlaced = 0;
+            while (minesPlaced < mineCount) {
+                const row = Math.floor(Math.random() * rows);
+                const col = Math.floor(Math.random() * cols);
+
+                if (board[row][col] !== -1 && !(row === avoidRow && col === avoidCol)) {
+                    board[row][col] = -1;
+                    minesPlaced++;
+
+                    for (let i = -1; i <= 1; i++) {
+                        for (let j = -1; j <= 1; j++) {
+                            const newRow = row + i;
+                            const newCol = col + j;
+                            if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols && board[newRow][newCol] !== -1) {
+                                board[newRow][newCol]++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function handleCellClick(e) {
+            if (gameOver) return;
+
+            const row = parseInt(e.target.dataset.row);
+            const col = parseInt(e.target.dataset.col);
+
+            if (revealed[row][col] || flagged[row][col]) return;
+
+            if (firstClick) {
+                placeMines(row, col);
+                firstClick = false;
+                startTimer();
+            }
+
+            revealCell(row, col);
+        }
+
+        function handleRightClick(e) {
+            e.preventDefault();
+            if (gameOver || firstClick) return;
+
+            const row = parseInt(e.target.dataset.row);
+            const col = parseInt(e.target.dataset.col);
+
+            if (revealed[row][col]) return;
+
+            flagged[row][col] = !flagged[row][col];
+            e.target.classList.toggle('flagged');
+
+            const flagCount = flagged.flat().filter(f => f).length;
+            document.getElementById('mine-count').textContent = mineCount - flagCount;
+        }
+
+        function revealCell(row, col) {
+            if (row < 0 || row >= rows || col < 0 || col >= cols || revealed[row][col]) return;
+
+            revealed[row][col] = true;
+            const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            cell.classList.add('revealed');
+
+            if (board[row][col] === -1) {
+                cell.classList.add('mine');
+                endGame(false);
+                return;
+            }
+
+            if (board[row][col] > 0) {
+                cell.textContent = board[row][col];
+                cell.classList.add(`number-${board[row][col]}`);
+            } else {
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        revealCell(row + i, col + j);
+                    }
+                }
+            }
+
+            checkWin();
+        }
+
+        function checkWin() {
+            let revealedCount = 0;
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    if (revealed[i][j]) revealedCount++;
+                }
+            }
+
+            if (revealedCount === rows * cols - mineCount) {
+                endGame(true);
+            }
+        }
+
+        function endGame(won) {
+            gameOver = true;
+            clearInterval(timerInterval);
+
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    if (board[i][j] === -1) {
+                        const cell = document.querySelector(`[data-row="${i}"][data-col="${j}"]`);
+                        cell.classList.add('mine');
+                    }
+                }
+            }
+
+            setTimeout(() => {
+                document.getElementById('overlay').classList.remove('hidden');
+                const gameOverDiv = document.getElementById('game-over');
+                gameOverDiv.classList.remove('hidden');
+                gameOverDiv.className = won ? 'game-over win' : 'game-over lose';
+                document.getElementById('result-text').textContent = won ? '🎉 승리!' : '💥 실패!';
+                document.getElementById('result-time').textContent = `시간: ${timer}초`;
+            }, 500);
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timer++;
+                document.getElementById('timer').textContent = timer;
+            }, 1000);
+        }
+
+        initGame();
+    </script>
 </body>
 </html>
