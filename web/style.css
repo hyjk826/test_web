@@ -122,12 +122,75 @@ body {
     min-height: 500px;
 }
 
-#game-canvas {
-    border: 3px solid var(--primary-color);
-    border-radius: 15px;
-    background: #f8fafc;
+.minesweeper-grid {
+    display: grid;
+    gap: 2px;
+    background: #374151;
+    padding: 10px;
+    border-radius: 10px;
     box-shadow: var(--shadow-md);
 }
+
+.cell {
+    width: 30px;
+    height: 30px;
+    background: #6b7280;
+    border: 2px outset #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    user-select: none;
+}
+
+.cell:hover {
+    background: #9ca3af;
+}
+
+.cell.revealed {
+    background: #d1d5db;
+    border: 1px inset #9ca3af;
+}
+
+.cell.flagged {
+    background: #fbbf24;
+    color: #92400e;
+}
+
+.cell.question {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.cell.mine {
+    background: #ef4444;
+    color: white;
+}
+
+.cell.mine-revealed {
+    background: #dc2626;
+    color: white;
+    animation: explode 0.3s ease;
+}
+
+@keyframes explode {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* Number colors */
+.cell[data-count="1"] { color: #3b82f6; }
+.cell[data-count="2"] { color: #10b981; }
+.cell[data-count="3"] { color: #f59e0b; }
+.cell[data-count="4"] { color: #8b5cf6; }
+.cell[data-count="5"] { color: #ef4444; }
+.cell[data-count="6"] { color: #06b6d4; }
+.cell[data-count="7"] { color: #1f2937; }
+.cell[data-count="8"] { color: #6b7280; }
 
 /* Game Controls */
 .game-controls {
@@ -410,10 +473,10 @@ body {
         padding: 1rem;
     }
     
-    #game-canvas {
-        width: 100%;
-        max-width: 350px;
-        height: auto;
+    .cell {
+        width: 25px;
+        height: 25px;
+        font-size: 12px;
     }
     
     .instructions {
@@ -456,6 +519,12 @@ body {
     
     .game-controls {
         padding: 1rem;
+    }
+    
+    .cell {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
     }
 }
 

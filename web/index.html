@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevOps Snake Game</title>
+    <title>DevOps Minesweeper</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,21 +13,21 @@
     <header class="game-header">
         <div class="header-container">
             <div class="game-title">
-                <i class="fas fa-gamepad"></i>
-                <h1>DevOps Snake Game</h1>
+                <i class="fas fa-bomb"></i>
+                <h1>DevOps Minesweeper</h1>
             </div>
             <div class="game-stats">
                 <div class="stat">
-                    <span class="stat-label">Score</span>
-                    <span class="stat-value" id="score">0</span>
+                    <span class="stat-label">Mines</span>
+                    <span class="stat-value" id="mines-count">10</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-label">Level</span>
-                    <span class="stat-value" id="level">1</span>
+                    <span class="stat-label">Time</span>
+                    <span class="stat-value" id="timer">000</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-label">High Score</span>
-                    <span class="stat-value" id="high-score">0</span>
+                    <span class="stat-label">Best</span>
+                    <span class="stat-value" id="best-time">000</span>
                 </div>
             </div>
         </div>
@@ -38,23 +38,23 @@
         <div class="game-wrapper">
             <!-- Game Board -->
             <div class="game-board" id="game-board">
-                <canvas id="game-canvas" width="400" height="400"></canvas>
+                <div class="minesweeper-grid" id="minesweeper-grid"></div>
             </div>
             
             <!-- Game Controls -->
             <div class="game-controls">
                 <div class="control-buttons">
-                    <button class="btn btn-primary" id="start-btn">
+                    <button class="btn btn-primary" id="new-game-btn">
                         <i class="fas fa-play"></i>
-                        Start Game
+                        New Game
                     </button>
-                    <button class="btn btn-secondary" id="pause-btn" disabled>
-                        <i class="fas fa-pause"></i>
-                        Pause
+                    <button class="btn btn-secondary" id="difficulty-btn">
+                        <i class="fas fa-cog"></i>
+                        Easy
                     </button>
-                    <button class="btn btn-danger" id="reset-btn">
-                        <i class="fas fa-redo"></i>
-                        Reset
+                    <button class="btn btn-danger" id="hint-btn">
+                        <i class="fas fa-lightbulb"></i>
+                        Hint
                     </button>
                 </div>
                 
@@ -62,25 +62,25 @@
                     <h3>게임 방법</h3>
                     <div class="instructions">
                         <div class="instruction-item">
-                            <i class="fas fa-arrow-up"></i>
-                            <span>위로 이동</span>
+                            <i class="fas fa-mouse-pointer"></i>
+                            <span>좌클릭: 열기</span>
                         </div>
                         <div class="instruction-item">
-                            <i class="fas fa-arrow-down"></i>
-                            <span>아래로 이동</span>
+                            <i class="fas fa-flag"></i>
+                            <span>우클릭: 깃발</span>
                         </div>
                         <div class="instruction-item">
-                            <i class="fas fa-arrow-left"></i>
-                            <span>왼쪽으로 이동</span>
+                            <i class="fas fa-question"></i>
+                            <span>더블클릭: 물음표</span>
                         </div>
                         <div class="instruction-item">
-                            <i class="fas fa-arrow-right"></i>
-                            <span>오른쪽으로 이동</span>
+                            <i class="fas fa-bomb"></i>
+                            <span>지뢰 피하기!</span>
                         </div>
                     </div>
                     <p class="instruction-text">
-                        DevOps 도구들을 먹어서 점수를 획득하세요!<br>
-                        뱀의 몸에 부딪히면 게임이 끝납니다.
+                        DevOps 도구들을 찾아서 모든 지뢰를 피하세요!<br>
+                        숫자는 주변 지뢰의 개수를 나타냅니다.
                     </p>
                 </div>
             </div>
@@ -90,22 +90,22 @@
         <div class="modal" id="game-over-modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>Game Over!</h2>
-                    <i class="fas fa-trophy"></i>
+                    <h2 id="game-result">Game Over!</h2>
+                    <i class="fas fa-trophy" id="result-icon"></i>
                 </div>
                 <div class="modal-body">
                     <div class="final-stats">
                         <div class="final-stat">
-                            <span class="final-stat-label">Final Score</span>
-                            <span class="final-stat-value" id="final-score">0</span>
+                            <span class="final-stat-label">Time</span>
+                            <span class="final-stat-value" id="final-time">000</span>
                         </div>
                         <div class="final-stat">
-                            <span class="final-stat-label">Level Reached</span>
-                            <span class="final-stat-value" id="final-level">1</span>
+                            <span class="final-stat-label">Difficulty</span>
+                            <span class="final-stat-value" id="final-difficulty">Easy</span>
                         </div>
                         <div class="final-stat">
-                            <span class="final-stat-label">High Score</span>
-                            <span class="final-stat-value" id="final-high-score">0</span>
+                            <span class="final-stat-label">Best Time</span>
+                            <span class="final-stat-value" id="final-best-time">000</span>
                         </div>
                     </div>
                     <div class="modal-buttons">
@@ -126,7 +126,7 @@
     <!-- Footer -->
     <footer class="game-footer">
         <div class="footer-content">
-            <p>&copy; 2024 DevOps Snake Game. Built with ❤️ using modern web technologies.</p>
+            <p>&copy; 2024 DevOps Minesweeper. Built with ❤️ using modern web technologies.</p>
             <div class="footer-links">
                 <a href="#" class="footer-link">
                     <i class="fab fa-github"></i>

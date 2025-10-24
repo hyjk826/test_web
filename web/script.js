@@ -1,39 +1,23 @@
-// DevOps Snake Game
-class SnakeGame {
+// DevOps Minesweeper Game
+class MinesweeperGame {
     constructor() {
-        this.canvas = document.getElementById('game-canvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.gridSize = 20;
-        this.tileCount = this.canvas.width / this.gridSize;
+        this.grid = [];
+        this.mines = [];
+        this.revealed = [];
+        this.flagged = [];
+        this.gameOver = false;
+        this.gameWon = false;
+        this.startTime = 0;
+        this.timer = 0;
+        this.timerInterval = null;
         
-        // Game state
-        this.gameRunning = false;
-        this.gamePaused = false;
-        this.score = 0;
-        this.level = 1;
-        this.highScore = localStorage.getItem('snakeHighScore') || 0;
-        this.gameSpeed = 150;
-        
-        // Snake
-        this.snake = [
-            {x: 10, y: 10}
-        ];
-        this.dx = 0;
-        this.dy = 0;
-        
-        // Food
-        this.food = {x: 15, y: 15};
-        this.foodType = 'normal';
-        
-        // DevOps tools for food
-        this.devopsTools = [
-            {name: 'GitHub', icon: 'fab fa-github', color: '#333', points: 10},
-            {name: 'Docker', icon: 'fas fa-ship', color: '#2496ed', points: 15},
-            {name: 'Kubernetes', icon: 'fas fa-cube', color: '#326ce5', points: 20},
-            {name: 'ArgoCD', icon: 'fas fa-sync', color: '#ef7b4d', points: 25},
-            {name: 'Helm', icon: 'fas fa-anchor', color: '#0f1689', points: 30},
-            {name: 'Jenkins', icon: 'fas fa-cogs', color: '#d24939', points: 35}
-        ];
+        // Game settings
+        this.difficulty = 'easy';
+        this.difficulties = {
+            easy: { rows: 9, cols: 9, mines: 10 },
+            medium: { rows: 16, cols: 16, mines: 40 },
+            hard: { rows: 16, cols: 30, mines: 99 }
+        };
         
         this.initializeGame();
         this.setupEventListeners();
@@ -41,382 +25,330 @@ class SnakeGame {
     }
     
     initializeGame() {
-        this.snake = [{x: 10, y: 10}];
-        this.dx = 0;
-        this.dy = 0;
-        this.score = 0;
-        this.level = 1;
-        this.gameSpeed = 150;
-        this.generateFood();
+        const settings = this.difficulties[this.difficulty];
+        this.rows = settings.rows;
+        this.cols = settings.cols;
+        this.mineCount = settings.mines;
+        
+        this.grid = Array(this.rows).fill().map(() => Array(this.cols).fill(0));
+        this.mines = [];
+        this.revealed = Array(this.rows).fill().map(() => Array(this.cols).fill(false));
+        this.flagged = Array(this.rows).fill().map(() => Array(this.cols).fill(false));
+        this.gameOver = false;
+        this.gameWon = false;
+        this.startTime = 0;
+        this.timer = 0;
+        
+        this.createGrid();
+        this.updateDisplay();
     }
     
-    setupEventListeners() {
-        // Button events
-        document.getElementById('start-btn').addEventListener('click', () => this.startGame());
-        document.getElementById('pause-btn').addEventListener('click', () => this.togglePause());
-        document.getElementById('reset-btn').addEventListener('click', () => this.resetGame());
-        document.getElementById('play-again-btn').addEventListener('click', () => this.playAgain());
-        document.getElementById('close-modal-btn').addEventListener('click', () => this.closeModal());
+    createGrid() {
+        const gridElement = document.getElementById('minesweeper-grid');
+        gridElement.innerHTML = '';
+        gridElement.style.gridTemplateColumns = `repeat(${this.cols}, 1fr)`;
         
-        // Keyboard events
-        document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.row = row;
+                cell.dataset.col = col;
+                
+                cell.addEventListener('click', (e) => this.handleCellClick(e, row, col));
+                cell.addEventListener('contextmenu', (e) => this.handleRightClick(e, row, col));
+                cell.addEventListener('dblclick', (e) => this.handleDoubleClick(e, row, col));
+                
+                gridElement.appendChild(cell);
+            }
+        }
+    }
+    
+    placeMines(firstRow, firstCol) {
+        this.mines = [];
+        let minesPlaced = 0;
         
-        // Prevent arrow keys from scrolling
-        document.addEventListener('keydown', (e) => {
-            if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                e.preventDefault();
+        while (minesPlaced < this.mineCount) {
+            const row = Math.floor(Math.random() * this.rows);
+            const col = Math.floor(Math.random() * this.cols);
+            
+            // Don't place mine on first click or if already has mine
+            if ((row === firstRow && col === firstCol) || this.mines.some(mine => mine.row === row && mine.col === col)) {
+                continue;
+            }
+            
+            this.mines.push({ row, col });
+            this.grid[row][col] = -1; // -1 represents mine
+            minesPlaced++;
+        }
+        
+        // Calculate numbers for each cell
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                if (this.grid[row][col] !== -1) {
+                    this.grid[row][col] = this.countAdjacentMines(row, col);
+                }
+            }
+        }
+    }
+    
+    countAdjacentMines(row, col) {
+        let count = 0;
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+                const newRow = row + i;
+                const newCol = col + j;
+                if (newRow >= 0 && newRow < this.rows && newCol >= 0 && newCol < this.cols) {
+                    if (this.mines.some(mine => mine.row === newRow && mine.col === newCol)) {
+                        count++;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+    
+    handleCellClick(e, row, col) {
+        e.preventDefault();
+        if (this.gameOver || this.gameWon || this.flagged[row][col]) return;
+        
+        if (this.startTime === 0) {
+            this.startTime = Date.now();
+            this.placeMines(row, col);
+            this.startTimer();
+        }
+        
+        this.revealCell(row, col);
+        this.updateDisplay();
+        this.checkWin();
+    }
+    
+    handleRightClick(e, row, col) {
+        e.preventDefault();
+        if (this.gameOver || this.gameWon || this.revealed[row][col]) return;
+        
+        this.flagged[row][col] = !this.flagged[row][col];
+        this.updateCellDisplay(row, col);
+        this.updateDisplay();
+    }
+    
+    handleDoubleClick(e, row, col) {
+        e.preventDefault();
+        if (this.gameOver || this.gameWon || !this.revealed[row][col]) return;
+        
+        // Toggle question mark
+        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        if (cell.classList.contains('question')) {
+            cell.classList.remove('question');
+        } else {
+            cell.classList.add('question');
+        }
+    }
+    
+    revealCell(row, col) {
+        if (this.revealed[row][col] || this.flagged[row][col]) return;
+        
+        this.revealed[row][col] = true;
+        this.updateCellDisplay(row, col);
+        
+        if (this.grid[row][col] === -1) {
+            // Mine hit!
+            this.gameOver = true;
+            this.stopTimer();
+            this.revealAllMines();
+            this.showGameOverModal(false);
+        } else if (this.grid[row][col] === 0) {
+            // Empty cell - reveal adjacent cells
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    const newRow = row + i;
+                    const newCol = col + j;
+                    if (newRow >= 0 && newRow < this.rows && newCol >= 0 && newCol < this.cols) {
+                        this.revealCell(newRow, newCol);
+                    }
+                }
+            }
+        }
+    }
+    
+    updateCellDisplay(row, col) {
+        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        if (!cell) return;
+        
+        cell.className = 'cell';
+        
+        if (this.flagged[row][col]) {
+            cell.classList.add('flagged');
+            cell.innerHTML = '<i class="fas fa-flag"></i>';
+        } else if (this.revealed[row][col]) {
+            cell.classList.add('revealed');
+            if (this.grid[row][col] === -1) {
+                cell.classList.add('mine');
+                cell.innerHTML = '<i class="fas fa-bomb"></i>';
+            } else if (this.grid[row][col] > 0) {
+                cell.textContent = this.grid[row][col];
+                cell.setAttribute('data-count', this.grid[row][col]);
+            }
+        } else if (cell.classList.contains('question')) {
+            cell.classList.add('question');
+            cell.innerHTML = '<i class="fas fa-question"></i>';
+        } else {
+            cell.innerHTML = '';
+        }
+    }
+    
+    revealAllMines() {
+        this.mines.forEach(mine => {
+            const cell = document.querySelector(`[data-row="${mine.row}"][data-col="${mine.col}"]`);
+            if (cell) {
+                cell.classList.add('mine-revealed');
+                cell.innerHTML = '<i class="fas fa-bomb"></i>';
             }
         });
     }
     
-    handleKeyPress(e) {
-        if (!this.gameRunning || this.gamePaused) return;
-        
-        const key = e.key;
-        
-        switch(key) {
-            case 'ArrowUp':
-                if (this.dy !== 1) {
-                    this.dx = 0;
-                    this.dy = -1;
+    checkWin() {
+        let revealedCount = 0;
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                if (this.revealed[row][col]) {
+                    revealedCount++;
                 }
-                break;
-            case 'ArrowDown':
-                if (this.dy !== -1) {
-                    this.dx = 0;
-                    this.dy = 1;
-                }
-                break;
-            case 'ArrowLeft':
-                if (this.dx !== 1) {
-                    this.dx = -1;
-                    this.dy = 0;
-                }
-                break;
-            case 'ArrowRight':
-                if (this.dx !== -1) {
-                    this.dx = 1;
-                    this.dy = 0;
-                }
-                break;
-            case ' ':
-                e.preventDefault();
-                this.togglePause();
-                break;
-        }
-    }
-    
-    startGame() {
-        if (!this.gameRunning) {
-            this.gameRunning = true;
-            this.gamePaused = false;
-            this.gameLoop();
-            this.updateButtons();
-        }
-    }
-    
-    togglePause() {
-        if (this.gameRunning) {
-            this.gamePaused = !this.gamePaused;
-            if (!this.gamePaused) {
-                this.gameLoop();
             }
-            this.updateButtons();
+        }
+        
+        if (revealedCount === (this.rows * this.cols - this.mineCount)) {
+            this.gameWon = true;
+            this.stopTimer();
+            this.showGameOverModal(true);
         }
     }
     
-    resetGame() {
-        this.gameRunning = false;
-        this.gamePaused = false;
+    startTimer() {
+        this.timerInterval = setInterval(() => {
+            this.timer = Math.floor((Date.now() - this.startTime) / 1000);
+            this.updateDisplay();
+        }, 1000);
+    }
+    
+    stopTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+    }
+    
+    updateDisplay() {
+        document.getElementById('mines-count').textContent = this.mineCount - this.flagged.flat().filter(Boolean).length;
+        document.getElementById('timer').textContent = this.timer.toString().padStart(3, '0');
+        
+        // Update best time
+        const bestTimeKey = `minesweeper_best_${this.difficulty}`;
+        const bestTime = localStorage.getItem(bestTimeKey) || 999;
+        document.getElementById('best-time').textContent = bestTime.toString().padStart(3, '0');
+    }
+    
+    showGameOverModal(won) {
+        const modal = document.getElementById('game-over-modal');
+        const result = document.getElementById('game-result');
+        const icon = document.getElementById('result-icon');
+        const finalTime = document.getElementById('final-time');
+        const finalDifficulty = document.getElementById('final-difficulty');
+        const finalBestTime = document.getElementById('final-best-time');
+        
+        if (won) {
+            result.textContent = 'Congratulations!';
+            icon.className = 'fas fa-trophy';
+            icon.style.color = '#fbbf24';
+            
+            // Update best time
+            const bestTimeKey = `minesweeper_best_${this.difficulty}`;
+            const currentBest = parseInt(localStorage.getItem(bestTimeKey) || '999');
+            if (this.timer < currentBest) {
+                localStorage.setItem(bestTimeKey, this.timer.toString());
+            }
+        } else {
+            result.textContent = 'Game Over!';
+            icon.className = 'fas fa-bomb';
+            icon.style.color = '#ef4444';
+        }
+        
+        finalTime.textContent = this.timer.toString().padStart(3, '0');
+        finalDifficulty.textContent = this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1);
+        
+        const bestTimeKey = `minesweeper_best_${this.difficulty}`;
+        const bestTime = localStorage.getItem(bestTimeKey) || '999';
+        finalBestTime.textContent = bestTime.toString().padStart(3, '0');
+        
+        modal.classList.add('show');
+    }
+    
+    setupEventListeners() {
+        document.getElementById('new-game-btn').addEventListener('click', () => this.newGame());
+        document.getElementById('difficulty-btn').addEventListener('click', () => this.toggleDifficulty());
+        document.getElementById('hint-btn').addEventListener('click', () => this.showHint());
+        document.getElementById('play-again-btn').addEventListener('click', () => this.playAgain());
+        document.getElementById('close-modal-btn').addEventListener('click', () => this.closeModal());
+    }
+    
+    newGame() {
+        this.stopTimer();
         this.initializeGame();
-        this.draw();
-        this.updateDisplay();
-        this.updateButtons();
+    }
+    
+    toggleDifficulty() {
+        const difficulties = ['easy', 'medium', 'hard'];
+        const currentIndex = difficulties.indexOf(this.difficulty);
+        this.difficulty = difficulties[(currentIndex + 1) % difficulties.length];
+        
+        const btn = document.getElementById('difficulty-btn');
+        btn.innerHTML = `<i class="fas fa-cog"></i> ${this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1)}`;
+        
+        this.newGame();
+    }
+    
+    showHint() {
+        if (this.gameOver || this.gameWon) return;
+        
+        // Find a safe cell to reveal
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                if (!this.revealed[row][col] && !this.flagged[row][col] && this.grid[row][col] !== -1) {
+                    this.revealCell(row, col);
+                    this.updateDisplay();
+                    this.checkWin();
+                    return;
+                }
+            }
+        }
     }
     
     playAgain() {
         this.closeModal();
-        this.resetGame();
-        this.startGame();
+        this.newGame();
     }
     
     closeModal() {
         document.getElementById('game-over-modal').classList.remove('show');
     }
-    
-    updateButtons() {
-        const startBtn = document.getElementById('start-btn');
-        const pauseBtn = document.getElementById('pause-btn');
-        const resetBtn = document.getElementById('reset-btn');
-        
-        if (this.gameRunning) {
-            startBtn.disabled = true;
-            pauseBtn.disabled = false;
-            resetBtn.disabled = false;
-            
-            if (this.gamePaused) {
-                pauseBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
-            } else {
-                pauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
-            }
-        } else {
-            startBtn.disabled = false;
-            pauseBtn.disabled = true;
-            resetBtn.disabled = false;
-            pauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
-        }
-    }
-    
-    gameLoop() {
-        if (!this.gameRunning || this.gamePaused) return;
-        
-        this.update();
-        this.draw();
-        
-        if (this.gameRunning) {
-            setTimeout(() => this.gameLoop(), this.gameSpeed);
-        }
-    }
-    
-    update() {
-        const head = {x: this.snake[0].x + this.dx, y: this.snake[0].y + this.dy};
-        
-        // Check wall collision
-        if (head.x < 0 || head.x >= this.tileCount || head.y < 0 || head.y >= this.tileCount) {
-            this.gameOver();
-            return;
-        }
-        
-        // Check self collision
-        for (let segment of this.snake) {
-            if (head.x === segment.x && head.y === segment.y) {
-                this.gameOver();
-                return;
-            }
-        }
-        
-        this.snake.unshift(head);
-        
-        // Check food collision
-        if (head.x === this.food.x && head.y === this.food.y) {
-            this.eatFood();
-        } else {
-            this.snake.pop();
-        }
-    }
-    
-    eatFood() {
-        this.score += this.food.points;
-        this.updateDisplay();
-        
-        // Level up every 100 points
-        const newLevel = Math.floor(this.score / 100) + 1;
-        if (newLevel > this.level) {
-            this.level = newLevel;
-            this.gameSpeed = Math.max(50, this.gameSpeed - 10);
-            this.showLevelUp();
-        }
-        
-        this.generateFood();
-    }
-    
-    generateFood() {
-        let newFood;
-        do {
-            newFood = {
-                x: Math.floor(Math.random() * this.tileCount),
-                y: Math.floor(Math.random() * this.tileCount)
-            };
-        } while (this.snake.some(segment => segment.x === newFood.x && segment.y === newFood.y));
-        
-        this.food = newFood;
-        this.foodType = this.devopsTools[Math.floor(Math.random() * this.devopsTools.length)];
-        this.food.points = this.foodType.points;
-    }
-    
-    draw() {
-        // Clear canvas
-        this.ctx.fillStyle = '#f8fafc';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Draw grid
-        this.ctx.strokeStyle = '#e2e8f0';
-        this.ctx.lineWidth = 1;
-        for (let i = 0; i <= this.tileCount; i++) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(i * this.gridSize, 0);
-            this.ctx.lineTo(i * this.gridSize, this.canvas.height);
-            this.ctx.moveTo(0, i * this.gridSize);
-            this.ctx.lineTo(this.canvas.width, i * this.gridSize);
-            this.ctx.stroke();
-        }
-        
-        // Draw snake
-        this.snake.forEach((segment, index) => {
-            if (index === 0) {
-                // Head
-                this.ctx.fillStyle = '#10b981';
-                this.ctx.fillRect(segment.x * this.gridSize + 2, segment.y * this.gridSize + 2, 
-                                this.gridSize - 4, this.gridSize - 4);
-                
-                // Eyes
-                this.ctx.fillStyle = '#ffffff';
-                this.ctx.fillRect(segment.x * this.gridSize + 6, segment.y * this.gridSize + 6, 3, 3);
-                this.ctx.fillRect(segment.x * this.gridSize + 11, segment.y * this.gridSize + 6, 3, 3);
-            } else {
-                // Body
-                this.ctx.fillStyle = '#059669';
-                this.ctx.fillRect(segment.x * this.gridSize + 3, segment.y * this.gridSize + 3, 
-                                this.gridSize - 6, this.gridSize - 6);
-            }
-        });
-        
-        // Draw food
-        this.ctx.fillStyle = this.foodType.color;
-        this.ctx.fillRect(this.food.x * this.gridSize + 4, this.food.y * this.gridSize + 4, 
-                         this.gridSize - 8, this.gridSize - 8);
-        
-        // Draw food icon (simplified)
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = '12px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText(this.foodType.name.charAt(0), 
-                          this.food.x * this.gridSize + this.gridSize/2, 
-                          this.food.y * this.gridSize + this.gridSize/2 + 4);
-    }
-    
-    gameOver() {
-        this.gameRunning = false;
-        this.gamePaused = false;
-        
-        // Update high score
-        if (this.score > this.highScore) {
-            this.highScore = this.score;
-            localStorage.setItem('snakeHighScore', this.highScore);
-        }
-        
-        this.showGameOverModal();
-        this.updateDisplay();
-        this.updateButtons();
-    }
-    
-    showGameOverModal() {
-        document.getElementById('final-score').textContent = this.score;
-        document.getElementById('final-level').textContent = this.level;
-        document.getElementById('final-high-score').textContent = this.highScore;
-        document.getElementById('game-over-modal').classList.add('show');
-    }
-    
-    showLevelUp() {
-        // Create level up notification
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--gradient-primary);
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 10px;
-            font-size: 1.25rem;
-            font-weight: 600;
-            z-index: 1001;
-            animation: levelUpAnimation 2s ease;
-        `;
-        notification.textContent = `Level ${this.level}!`;
-        
-        // Add animation CSS
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes levelUpAnimation {
-                0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-                50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-                100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
-            }
-        `;
-        document.head.appendChild(style);
-        
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            document.body.removeChild(notification);
-            document.head.removeChild(style);
-        }, 2000);
-    }
-    
-    updateDisplay() {
-        document.getElementById('score').textContent = this.score;
-        document.getElementById('level').textContent = this.level;
-        document.getElementById('high-score').textContent = this.highScore;
-    }
 }
 
 // Initialize game when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎮 DevOps Snake Game loaded!');
+    console.log('💣 DevOps Minesweeper loaded!');
     
-    const game = new SnakeGame();
+    const game = new MinesweeperGame();
     
-    // Add touch controls for mobile
-    let touchStartX = 0;
-    let touchStartY = 0;
-    
-    document.addEventListener('touchstart', (e) => {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-    });
-    
-    document.addEventListener('touchend', (e) => {
-        if (!game.gameRunning || game.gamePaused) return;
-        
-        const touchEndX = e.changedTouches[0].clientX;
-        const touchEndY = e.changedTouches[0].clientY;
-        
-        const deltaX = touchEndX - touchStartX;
-        const deltaY = touchEndY - touchStartY;
-        
-        const minSwipeDistance = 50;
-        
-        if (Math.abs(deltaX) > Math.abs(deltaY)) {
-            // Horizontal swipe
-            if (Math.abs(deltaX) > minSwipeDistance) {
-                if (deltaX > 0) {
-                    // Swipe right
-                    if (game.dx !== -1) {
-                        game.dx = 1;
-                        game.dy = 0;
-                    }
-                } else {
-                    // Swipe left
-                    if (game.dx !== 1) {
-                        game.dx = -1;
-                        game.dy = 0;
-                    }
-                }
-            }
-        } else {
-            // Vertical swipe
-            if (Math.abs(deltaY) > minSwipeDistance) {
-                if (deltaY > 0) {
-                    // Swipe down
-                    if (game.dy !== -1) {
-                        game.dx = 0;
-                        game.dy = 1;
-                    }
-                } else {
-                    // Swipe up
-                    if (game.dy !== 1) {
-                        game.dx = 0;
-                        game.dy = -1;
-                    }
-                }
-            }
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'n' || e.key === 'N') {
+            game.newGame();
+        } else if (e.key === 'h' || e.key === 'H') {
+            game.showHint();
+        } else if (e.key === 'd' || e.key === 'D') {
+            game.toggleDifficulty();
         }
     });
-    
-    // Prevent context menu on long press
-    document.addEventListener('contextmenu', (e) => e.preventDefault());
     
     // Add keyboard shortcuts info
     const shortcutsInfo = document.createElement('div');
@@ -435,28 +367,31 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     shortcutsInfo.innerHTML = `
         <strong>Keyboard Shortcuts:</strong><br>
-        Arrow Keys: Move<br>
-        Space: Pause/Resume<br>
+        N: New Game<br>
+        H: Hint<br>
+        D: Difficulty<br>
         <br>
-        <strong>Mobile:</strong><br>
-        Swipe to move
+        <strong>Mouse:</strong><br>
+        Left: Reveal<br>
+        Right: Flag<br>
+        Double: Question
     `;
     document.body.appendChild(shortcutsInfo);
     
     // Show shortcuts on first visit
-    if (!localStorage.getItem('snakeGameVisited')) {
+    if (!localStorage.getItem('minesweeperVisited')) {
         setTimeout(() => {
             shortcutsInfo.style.display = 'block';
             setTimeout(() => {
                 shortcutsInfo.style.display = 'none';
             }, 5000);
         }, 2000);
-        localStorage.setItem('snakeGameVisited', 'true');
+        localStorage.setItem('minesweeperVisited', 'true');
     }
     
     // Add click to show shortcuts
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'h' || e.key === 'H') {
+        if (e.key === '?') {
             shortcutsInfo.style.display = shortcutsInfo.style.display === 'none' ? 'block' : 'none';
         }
     });
