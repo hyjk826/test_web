@@ -1,422 +1,319 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>지뢰찾기</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <title>Basic Tetris HTML Game</title>
+  <meta charset="UTF-8">
+  <style>
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
 
-        body {
-            font-family: 'Arial', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
+  body {
+    background: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 32px;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            gap: 15px;
-        }
-
-        .info {
-            display: flex;
-            gap: 20px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .info-item {
-            background: #f0f0f0;
-            padding: 8px 15px;
-            border-radius: 8px;
-        }
-
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.3s;
-        }
-
-        button:hover {
-            background: #5568d3;
-        }
-
-        .difficulty {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .difficulty button {
-            padding: 8px 15px;
-            font-size: 14px;
-            background: #764ba2;
-        }
-
-        .difficulty button.active {
-            background: #5a3a7d;
-        }
-
-        .game-board {
-            display: inline-grid;
-            gap: 2px;
-            background: #999;
-            padding: 2px;
-            border-radius: 5px;
-        }
-
-        .cell {
-            width: 30px;
-            height: 30px;
-            background: #ddd;
-            border: 2px outset #eee;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            font-size: 16px;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .cell:hover:not(.revealed):not(.flagged) {
-            background: #ccc;
-        }
-
-        .cell.revealed {
-            background: #fff;
-            border: 1px solid #999;
-            cursor: default;
-        }
-
-        .cell.mine {
-            background: #ff4444;
-        }
-
-        .cell.flagged {
-            background: #ffd700;
-        }
-
-        .cell.flagged::after {
-            content: '🚩';
-            font-size: 18px;
-        }
-
-        .cell.mine::after {
-            content: '💣';
-            font-size: 18px;
-        }
-
-        .cell.number-1 { color: blue; }
-        .cell.number-2 { color: green; }
-        .cell.number-3 { color: red; }
-        .cell.number-4 { color: darkblue; }
-        .cell.number-5 { color: darkred; }
-        .cell.number-6 { color: cyan; }
-        .cell.number-7 { color: black; }
-        .cell.number-8 { color: gray; }
-
-        .game-over {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
-            text-align: center;
-            z-index: 1000;
-        }
-
-        .game-over h2 {
-            font-size: 36px;
-            margin-bottom: 20px;
-        }
-
-        .game-over.win h2 {
-            color: #4CAF50;
-        }
-
-        .game-over.lose h2 {
-            color: #f44336;
-        }
-
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 999;
-        }
-
-        .hidden {
-            display: none;
-        }
-    </style>
+  canvas {
+    border: 1px solid white;
+  }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎮 지뢰찾기</h1>
-        
-        <div class="difficulty">
-            <button onclick="setDifficulty('easy')" class="active" id="btn-easy">쉬움 (9x9)</button>
-            <button onclick="setDifficulty('medium')" id="btn-medium">보통 (16x16)</button>
-            <button onclick="setDifficulty('hard')" id="btn-hard">어려움 (16x30)</button>
-        </div>
+<canvas width="320" height="640" id="game"></canvas>
+<script>
+// https://tetris.fandom.com/wiki/Tetris_Guideline
 
-        <div class="controls">
-            <div class="info">
-                <div class="info-item">💣 <span id="mine-count">10</span></div>
-                <div class="info-item">⏱️ <span id="timer">0</span>초</div>
-            </div>
-            <button onclick="initGame()">새 게임</button>
-        </div>
+// get a random integer between the range of [min,max]
+// @see https://stackoverflow.com/a/1527820/2124254
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
 
-        <div id="game-board" class="game-board"></div>
-    </div>
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
-    <div id="overlay" class="overlay hidden"></div>
-    <div id="game-over" class="game-over hidden">
-        <h2 id="result-text"></h2>
-        <p id="result-time"></p>
-        <button onclick="initGame()">다시 시작</button>
-    </div>
+// generate a new tetromino sequence
+// @see https://tetris.fandom.com/wiki/Random_Generator
+function generateSequence() {
+  const sequence = ['I', 'J', 'L', 'O', 'S', 'T', 'Z'];
 
-    <script>
-        let rows = 9;
-        let cols = 9;
-        let mineCount = 10;
-        let board = [];
-        let revealed = [];
-        let flagged = [];
-        let gameOver = false;
-        let timer = 0;
-        let timerInterval = null;
-        let firstClick = true;
+  while (sequence.length) {
+    const rand = getRandomInt(0, sequence.length - 1);
+    const name = sequence.splice(rand, 1)[0];
+    tetrominoSequence.push(name);
+  }
+}
 
-        function setDifficulty(level) {
-            document.querySelectorAll('.difficulty button').forEach(btn => {
-                btn.classList.remove('active');
-            });
+// get the next tetromino in the sequence
+function getNextTetromino() {
+  if (tetrominoSequence.length === 0) {
+    generateSequence();
+  }
 
-            if (level === 'easy') {
-                rows = 9;
-                cols = 9;
-                mineCount = 10;
-                document.getElementById('btn-easy').classList.add('active');
-            } else if (level === 'medium') {
-                rows = 16;
-                cols = 16;
-                mineCount = 40;
-                document.getElementById('btn-medium').classList.add('active');
-            } else if (level === 'hard') {
-                rows = 16;
-                cols = 30;
-                mineCount = 99;
-                document.getElementById('btn-hard').classList.add('active');
-            }
+  const name = tetrominoSequence.pop();
+  const matrix = tetrominos[name];
 
-            initGame();
+  // I and O start centered, all others start in left-middle
+  const col = playfield[0].length / 2 - Math.ceil(matrix[0].length / 2);
+
+  // I starts on row 21 (-1), all others start on row 22 (-2)
+  const row = name === 'I' ? -1 : -2;
+
+  return {
+    name: name,      // name of the piece (L, O, etc.)
+    matrix: matrix,  // the current rotation matrix
+    row: row,        // current row (starts offscreen)
+    col: col         // current col
+  };
+}
+
+// rotate an NxN matrix 90deg
+// @see https://codereview.stackexchange.com/a/186834
+function rotate(matrix) {
+  const N = matrix.length - 1;
+  const result = matrix.map((row, i) =>
+    row.map((val, j) => matrix[N - j][i])
+  );
+
+  return result;
+}
+
+// check to see if the new matrix/row/col is valid
+function isValidMove(matrix, cellRow, cellCol) {
+  for (let row = 0; row < matrix.length; row++) {
+    for (let col = 0; col < matrix[row].length; col++) {
+      if (matrix[row][col] && (
+          // outside the game bounds
+          cellCol + col < 0 ||
+          cellCol + col >= playfield[0].length ||
+          cellRow + row >= playfield.length ||
+          // collides with another piece
+          playfield[cellRow + row][cellCol + col])
+        ) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+// place the tetromino on the playfield
+function placeTetromino() {
+  for (let row = 0; row < tetromino.matrix.length; row++) {
+    for (let col = 0; col < tetromino.matrix[row].length; col++) {
+      if (tetromino.matrix[row][col]) {
+
+        // game over if piece has any part offscreen
+        if (tetromino.row + row < 0) {
+          return showGameOver();
         }
 
-        function initGame() {
-            board = [];
-            revealed = [];
-            flagged = [];
-            gameOver = false;
-            firstClick = true;
-            timer = 0;
-            clearInterval(timerInterval);
-            document.getElementById('timer').textContent = timer;
-            document.getElementById('mine-count').textContent = mineCount;
-            document.getElementById('overlay').classList.add('hidden');
-            document.getElementById('game-over').classList.add('hidden');
+        playfield[tetromino.row + row][tetromino.col + col] = tetromino.name;
+      }
+    }
+  }
 
-            const gameBoard = document.getElementById('game-board');
-            gameBoard.innerHTML = '';
-            gameBoard.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
+  // check for line clears starting from the bottom and working our way up
+  for (let row = playfield.length - 1; row >= 0; ) {
+    if (playfield[row].every(cell => !!cell)) {
 
-            for (let i = 0; i < rows; i++) {
-                board[i] = [];
-                revealed[i] = [];
-                flagged[i] = [];
-                for (let j = 0; j < cols; j++) {
-                    board[i][j] = 0;
-                    revealed[i][j] = false;
-                    flagged[i][j] = false;
-
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    cell.dataset.row = i;
-                    cell.dataset.col = j;
-                    cell.addEventListener('click', handleCellClick);
-                    cell.addEventListener('contextmenu', handleRightClick);
-                    gameBoard.appendChild(cell);
-                }
-            }
+      // drop every row above this one
+      for (let r = row; r >= 0; r--) {
+        for (let c = 0; c < playfield[r].length; c++) {
+          playfield[r][c] = playfield[r-1][c];
         }
+      }
+    }
+    else {
+      row--;
+    }
+  }
 
-        function placeMines(avoidRow, avoidCol) {
-            let minesPlaced = 0;
-            while (minesPlaced < mineCount) {
-                const row = Math.floor(Math.random() * rows);
-                const col = Math.floor(Math.random() * cols);
+  tetromino = getNextTetromino();
+}
 
-                if (board[row][col] !== -1 && !(row === avoidRow && col === avoidCol)) {
-                    board[row][col] = -1;
-                    minesPlaced++;
+// show the game over screen
+function showGameOver() {
+  cancelAnimationFrame(rAF);
+  gameOver = true;
 
-                    for (let i = -1; i <= 1; i++) {
-                        for (let j = -1; j <= 1; j++) {
-                            const newRow = row + i;
-                            const newCol = col + j;
-                            if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols && board[newRow][newCol] !== -1) {
-                                board[newRow][newCol]++;
-                            }
-                        }
-                    }
-                }
-            }
+  context.fillStyle = 'black';
+  context.globalAlpha = 0.75;
+  context.fillRect(0, canvas.height / 2 - 30, canvas.width, 60);
+
+  context.globalAlpha = 1;
+  context.fillStyle = 'white';
+  context.font = '36px monospace';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText('GAME OVER!', canvas.width / 2, canvas.height / 2);
+}
+
+const canvas = document.getElementById('game');
+const context = canvas.getContext('2d');
+const grid = 32;
+const tetrominoSequence = [];
+
+// keep track of what is in every cell of the game using a 2d array
+// tetris playfield is 10x20, with a few rows offscreen
+const playfield = [];
+
+// populate the empty state
+for (let row = -2; row < 20; row++) {
+  playfield[row] = [];
+
+  for (let col = 0; col < 10; col++) {
+    playfield[row][col] = 0;
+  }
+}
+
+// how to draw each tetromino
+// @see https://tetris.fandom.com/wiki/SRS
+const tetrominos = {
+  'I': [
+    [0,0,0,0],
+    [1,1,1,1],
+    [0,0,0,0],
+    [0,0,0,0]
+  ],
+  'J': [
+    [1,0,0],
+    [1,1,1],
+    [0,0,0],
+  ],
+  'L': [
+    [0,0,1],
+    [1,1,1],
+    [0,0,0],
+  ],
+  'O': [
+    [1,1],
+    [1,1],
+  ],
+  'S': [
+    [0,1,1],
+    [1,1,0],
+    [0,0,0],
+  ],
+  'Z': [
+    [1,1,0],
+    [0,1,1],
+    [0,0,0],
+  ],
+  'T': [
+    [0,1,0],
+    [1,1,1],
+    [0,0,0],
+  ]
+};
+
+// color of each tetromino
+const colors = {
+  'I': 'cyan',
+  'O': 'yellow',
+  'T': 'purple',
+  'S': 'green',
+  'Z': 'red',
+  'J': 'blue',
+  'L': 'orange'
+};
+
+let count = 0;
+let tetromino = getNextTetromino();
+let rAF = null;  // keep track of the animation frame so we can cancel it
+let gameOver = false;
+
+// game loop
+function loop() {
+  rAF = requestAnimationFrame(loop);
+  context.clearRect(0,0,canvas.width,canvas.height);
+
+  // draw the playfield
+  for (let row = 0; row < 20; row++) {
+    for (let col = 0; col < 10; col++) {
+      if (playfield[row][col]) {
+        const name = playfield[row][col];
+        context.fillStyle = colors[name];
+
+        // drawing 1 px smaller than the grid creates a grid effect
+        context.fillRect(col * grid, row * grid, grid-1, grid-1);
+      }
+    }
+  }
+
+  // draw the active tetromino
+  if (tetromino) {
+
+    // tetromino falls every 35 frames
+    if (++count > 35) {
+      tetromino.row++;
+      count = 0;
+
+      // place piece if it runs into anything
+      if (!isValidMove(tetromino.matrix, tetromino.row, tetromino.col)) {
+        tetromino.row--;
+        placeTetromino();
+      }
+    }
+
+    context.fillStyle = colors[tetromino.name];
+
+    for (let row = 0; row < tetromino.matrix.length; row++) {
+      for (let col = 0; col < tetromino.matrix[row].length; col++) {
+        if (tetromino.matrix[row][col]) {
+
+          // drawing 1 px smaller than the grid creates a grid effect
+          context.fillRect((tetromino.col + col) * grid, (tetromino.row + row) * grid, grid-1, grid-1);
         }
+      }
+    }
+  }
+}
 
-        function handleCellClick(e) {
-            if (gameOver) return;
+// listen to keyboard events to move the active tetromino
+document.addEventListener('keydown', function(e) {
+  if (gameOver) return;
 
-            const row = parseInt(e.target.dataset.row);
-            const col = parseInt(e.target.dataset.col);
+  // left and right arrow keys (move)
+  if (e.which === 37 || e.which === 39) {
+    const col = e.which === 37
+      ? tetromino.col - 1
+      : tetromino.col + 1;
 
-            if (revealed[row][col] || flagged[row][col]) return;
+    if (isValidMove(tetromino.matrix, tetromino.row, col)) {
+      tetromino.col = col;
+    }
+  }
 
-            if (firstClick) {
-                placeMines(row, col);
-                firstClick = false;
-                startTimer();
-            }
+  // up arrow key (rotate)
+  if (e.which === 38) {
+    const matrix = rotate(tetromino.matrix);
+    if (isValidMove(matrix, tetromino.row, tetromino.col)) {
+      tetromino.matrix = matrix;
+    }
+  }
 
-            revealCell(row, col);
-        }
+  // down arrow key (drop)
+  if(e.which === 40) {
+    const row = tetromino.row + 1;
 
-        function handleRightClick(e) {
-            e.preventDefault();
-            if (gameOver || firstClick) return;
+    if (!isValidMove(tetromino.matrix, row, tetromino.col)) {
+      tetromino.row = row - 1;
 
-            const row = parseInt(e.target.dataset.row);
-            const col = parseInt(e.target.dataset.col);
+      placeTetromino();
+      return;
+    }
 
-            if (revealed[row][col]) return;
+    tetromino.row = row;
+  }
+});
 
-            flagged[row][col] = !flagged[row][col];
-            e.target.classList.toggle('flagged');
-
-            const flagCount = flagged.flat().filter(f => f).length;
-            document.getElementById('mine-count').textContent = mineCount - flagCount;
-        }
-
-        function revealCell(row, col) {
-            if (row < 0 || row >= rows || col < 0 || col >= cols || revealed[row][col]) return;
-
-            revealed[row][col] = true;
-            const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-            cell.classList.add('revealed');
-
-            if (board[row][col] === -1) {
-                cell.classList.add('mine');
-                endGame(false);
-                return;
-            }
-
-            if (board[row][col] > 0) {
-                cell.textContent = board[row][col];
-                cell.classList.add(`number-${board[row][col]}`);
-            } else {
-                for (let i = -1; i <= 1; i++) {
-                    for (let j = -1; j <= 1; j++) {
-                        revealCell(row + i, col + j);
-                    }
-                }
-            }
-
-            checkWin();
-        }
-
-        function checkWin() {
-            let revealedCount = 0;
-            for (let i = 0; i < rows; i++) {
-                for (let j = 0; j < cols; j++) {
-                    if (revealed[i][j]) revealedCount++;
-                }
-            }
-
-            if (revealedCount === rows * cols - mineCount) {
-                endGame(true);
-            }
-        }
-
-        function endGame(won) {
-            gameOver = true;
-            clearInterval(timerInterval);
-
-            for (let i = 0; i < rows; i++) {
-                for (let j = 0; j < cols; j++) {
-                    if (board[i][j] === -1) {
-                        const cell = document.querySelector(`[data-row="${i}"][data-col="${j}"]`);
-                        cell.classList.add('mine');
-                    }
-                }
-            }
-
-            setTimeout(() => {
-                document.getElementById('overlay').classList.remove('hidden');
-                const gameOverDiv = document.getElementById('game-over');
-                gameOverDiv.classList.remove('hidden');
-                gameOverDiv.className = won ? 'game-over win' : 'game-over lose';
-                document.getElementById('result-text').textContent = won ? '🎉 승리!' : '💥 실패!';
-                document.getElementById('result-time').textContent = `시간: ${timer}초`;
-            }, 500);
-        }
-
-        function startTimer() {
-            timerInterval = setInterval(() => {
-                timer++;
-                document.getElementById('timer').textContent = timer;
-            }, 1000);
-        }
-
-        initGame();
-    </script>
+// start the game
+rAF = requestAnimationFrame(loop);
+</script>
 </body>
 </html>
